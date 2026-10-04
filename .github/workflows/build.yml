@@ -26,3 +26,5 @@ jobs:
       - uses: actions/checkout@v4
       - name: Core and shader tests
         run: sh tests/run_tests.sh
+      - name: English translations complete
+        run: python3 tests/check_strings.py

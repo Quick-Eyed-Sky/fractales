@@ -115,11 +115,11 @@ struct MetalCanvas: NSViewRepresentable {
                 view.renderer = renderer
                 view.delegate = renderer
             } catch {
-                let text = "Le moteur Metal n'a pas démarré : \(error.localizedDescription)"
+                let text = String(format: L("Le moteur Metal n'a pas démarré : %@"), error.localizedDescription)
                 DispatchQueue.main.async { model.errorMessage = text }
             }
         } else {
-            DispatchQueue.main.async { model.errorMessage = "Aucun processeur graphique Metal trouvé." }
+            DispatchQueue.main.async { model.errorMessage = L("Aucun processeur graphique Metal trouvé.") }
         }
         model.requestRedraw = { [weak view] in view?.needsDisplay = true }
         return view

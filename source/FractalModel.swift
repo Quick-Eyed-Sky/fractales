@@ -8,6 +8,17 @@ import Foundation
 import QuartzCore
 import SwiftUI
 
+// MARK: - Languages
+
+/// The text shown to the user, in the language macOS chose for the app (French or English).
+/// The keys are the French texts; the translations are in fr.lproj and en.lproj/Localizable.strings.
+func L(_ french: String) -> String {
+    NSLocalizedString(french, comment: "")
+}
+
+/// Number formatting that matches the language of the interface, not only the region.
+let appLocale = Locale(identifier: Bundle.main.preferredLocalizations.first ?? "en")
+
 // MARK: - Formulas
 
 enum Formula: Int32, CaseIterable, Identifiable {
@@ -19,9 +30,9 @@ enum Formula: Int32, CaseIterable, Identifiable {
         switch self {
         case .mandelbrot: return "Mandelbrot"
         case .burningShip: return "Burning Ship"
-        case .tricorn: return "Tricorne"
+        case .tricorn: return L("Tricorne")
         case .multibrot3: return "Multibrot z³"
-        case .celtic: return "Celtique"
+        case .celtic: return L("Celtique")
         }
     }
 
@@ -57,20 +68,20 @@ struct Preset: Identifiable {
 
 let presets: [Preset] = [
     Preset(name: "Mandelbrot", formula: .mandelbrot, x: "-0.6", y: "0", halfHeight: 1.25),
-    Preset(name: "Vallée des hippocampes", formula: .mandelbrot, x: "-0.7453", y: "0.1127", halfHeight: 0.0065),
-    Preset(name: "Vallée des éléphants", formula: .mandelbrot, x: "0.2715", y: "0.0055", halfHeight: 0.012),
-    Preset(name: "Spirale profonde", formula: .mandelbrot,
+    Preset(name: L("Vallée des hippocampes"), formula: .mandelbrot, x: "-0.7453", y: "0.1127", halfHeight: 0.0065),
+    Preset(name: L("Vallée des éléphants"), formula: .mandelbrot, x: "0.2715", y: "0.0055", halfHeight: 0.012),
+    Preset(name: L("Spirale profonde"), formula: .mandelbrot,
            x: "-0.743643887037158704752191506114774", y: "0.131825904205311970493132056385139",
            halfHeight: 2e-11),
-    Preset(name: "Julia : lapin de Douady", formula: .mandelbrot, julia: (-0.123, 0.745), x: "0", y: "0", halfHeight: 1.3),
-    Preset(name: "Julia : dendrite", formula: .mandelbrot, julia: (0, 1), x: "0", y: "0", halfHeight: 1.3),
-    Preset(name: "Julia : San Marco", formula: .mandelbrot, julia: (-0.75, 0), x: "0", y: "0", halfHeight: 1.1),
-    Preset(name: "Julia : spirales", formula: .mandelbrot, julia: (-0.7269, 0.1889), x: "0", y: "0", halfHeight: 1.2),
+    Preset(name: L("Julia : lapin de Douady"), formula: .mandelbrot, julia: (-0.123, 0.745), x: "0", y: "0", halfHeight: 1.3),
+    Preset(name: L("Julia : dendrite"), formula: .mandelbrot, julia: (0, 1), x: "0", y: "0", halfHeight: 1.3),
+    Preset(name: L("Julia : San Marco"), formula: .mandelbrot, julia: (-0.75, 0), x: "0", y: "0", halfHeight: 1.1),
+    Preset(name: L("Julia : spirales"), formula: .mandelbrot, julia: (-0.7269, 0.1889), x: "0", y: "0", halfHeight: 1.2),
     Preset(name: "Burning Ship", formula: .burningShip, x: "-0.45", y: "-0.5", halfHeight: 1.2),
-    Preset(name: "Burning Ship : l'armada", formula: .burningShip, x: "-1.762", y: "-0.028", halfHeight: 0.04),
-    Preset(name: "Tricorne", formula: .tricorn, x: "-0.3", y: "0", halfHeight: 1.4),
+    Preset(name: L("Burning Ship : l'armada"), formula: .burningShip, x: "-1.762", y: "-0.028", halfHeight: 0.04),
+    Preset(name: L("Tricorne"), formula: .tricorn, x: "-0.3", y: "0", halfHeight: 1.4),
     Preset(name: "Multibrot z³", formula: .multibrot3, x: "0", y: "0", halfHeight: 1.3),
-    Preset(name: "Celtique", formula: .celtic, x: "-0.5", y: "0", halfHeight: 1.4),
+    Preset(name: L("Celtique"), formula: .celtic, x: "-0.5", y: "0", halfHeight: 1.4),
 ]
 
 // MARK: - Palettes
@@ -105,17 +116,17 @@ struct Palette: Identifiable {
 }
 
 let palettes: [Palette] = [
-    Palette(id: 0, name: "Classique", stops: [(0, 0, 7, 100), (0.16, 32, 107, 203), (0.42, 237, 255, 255),
+    Palette(id: 0, name: L("Classique"), stops: [(0, 0, 7, 100), (0.16, 32, 107, 203), (0.42, 237, 255, 255),
                                               (0.6425, 255, 170, 0), (0.8575, 0, 2, 0)]),
-    Palette(id: 1, name: "Feu", stops: [(0, 10, 0, 0), (0.25, 140, 10, 0), (0.5, 255, 120, 0),
+    Palette(id: 1, name: L("Feu"), stops: [(0, 10, 0, 0), (0.25, 140, 10, 0), (0.5, 255, 120, 0),
                                         (0.7, 255, 230, 90), (0.85, 255, 255, 230)]),
-    Palette(id: 2, name: "Océan", stops: [(0, 2, 10, 40), (0.3, 0, 80, 140), (0.55, 40, 200, 210),
+    Palette(id: 2, name: L("Océan"), stops: [(0, 2, 10, 40), (0.3, 0, 80, 140), (0.55, 40, 200, 210),
                                           (0.75, 220, 250, 255), (0.9, 20, 60, 110)]),
-    Palette(id: 3, name: "Aurore", stops: [(0, 20, 0, 50), (0.25, 160, 20, 160), (0.5, 40, 220, 120),
+    Palette(id: 3, name: L("Aurore"), stops: [(0, 20, 0, 50), (0.25, 160, 20, 160), (0.5, 40, 220, 120),
                                            (0.75, 30, 200, 255), (0.9, 10, 20, 90)]),
-    Palette(id: 4, name: "Arc-en-ciel", stops: [(0, 255, 0, 0), (1.0 / 6, 255, 255, 0), (2.0 / 6, 0, 255, 0),
+    Palette(id: 4, name: L("Arc-en-ciel"), stops: [(0, 255, 0, 0), (1.0 / 6, 255, 255, 0), (2.0 / 6, 0, 255, 0),
                                                 (3.0 / 6, 0, 255, 255), (4.0 / 6, 0, 0, 255), (5.0 / 6, 255, 0, 255)]),
-    Palette(id: 5, name: "Encre", stops: [(0, 0, 0, 0), (0.5, 255, 255, 255)]),
+    Palette(id: 5, name: L("Encre"), stops: [(0, 0, 0, 0), (0.5, 255, 255, 255)]),
 ]
 
 // MARK: - Model

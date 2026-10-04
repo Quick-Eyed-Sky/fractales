@@ -35,6 +35,11 @@ rm -rf "$APP"
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
 cp "$BUILD/Fractales" "$APP/Contents/MacOS/Fractales"
 cp "$HERE/Shaders.metal" "$APP/Contents/Resources/Shaders.metal"
+# Texts in French and English: macOS shows the language of the Mac, English if it is neither.
+for LANG_DIR in "$HERE"/*.lproj; do
+  plutil -lint -s "$LANG_DIR"/*.strings
+  cp -R "$LANG_DIR" "$APP/Contents/Resources/"
+done
 [ -f "$HERE/AppIcon.icns" ] && cp "$HERE/AppIcon.icns" "$APP/Contents/Resources/AppIcon.icns"
 
 cat > "$APP/Contents/Info.plist" <<PLIST
@@ -50,7 +55,8 @@ cat > "$APP/Contents/Info.plist" <<PLIST
   <key>CFBundlePackageType</key><string>APPL</string>
   <key>CFBundleShortVersionString</key><string>$VERSION</string>
   <key>CFBundleVersion</key><string>$VERSION</string>
-  <key>CFBundleDevelopmentRegion</key><string>fr</string>
+  <key>CFBundleDevelopmentRegion</key><string>en</string>
+  <key>CFBundleLocalizations</key><array><string>fr</string><string>en</string></array>
   <key>LSMinimumSystemVersion</key><string>14.0</string>
   <key>LSApplicationCategoryType</key><string>public.app-category.entertainment</string>
   <key>NSHighResolutionCapable</key><true/>

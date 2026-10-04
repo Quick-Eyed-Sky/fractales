@@ -1,0 +1,2 @@
+/* Fractales : textes en français. Les clés sont déjà les textes français écrits dans les
+   sources Swift, donc ce fichier reste vide ; sa présence dit à macOS que l'appli parle français. */

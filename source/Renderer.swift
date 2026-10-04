@@ -40,12 +40,12 @@ final class Renderer: NSObject, MTKViewDelegate {
     init(model: FractalModel, device: MTLDevice) throws {
         self.model = model
         self.device = device
-        guard let queue = device.makeCommandQueue() else { throw RendererError.message("Pas de file de commandes Metal.") }
+        guard let queue = device.makeCommandQueue() else { throw RendererError.message(L("Pas de file de commandes Metal.")) }
         self.queue = queue
 
         guard let url = Bundle.main.url(forResource: "Shaders", withExtension: "metal"),
               let source = try? String(contentsOf: url, encoding: .utf8) else {
-            throw RendererError.message("Shaders.metal est introuvable dans l'appli. Reconstruis-la avec build_app.sh.")
+            throw RendererError.message(L("Shaders.metal est introuvable dans l'appli. Reconstruis-la avec build_app.sh."))
         }
         let options = MTLCompileOptions()
         // Exact IEEE maths: the perturbation relies on small differences surviving.
@@ -58,7 +58,7 @@ final class Renderer: NSObject, MTKViewDelegate {
         guard let iterate = library.makeFunction(name: "iterate"),
               let vertex = library.makeFunction(name: "colorVertex"),
               let fragment = library.makeFunction(name: "colorFragment") else {
-            throw RendererError.message("Fonctions manquantes dans Shaders.metal.")
+            throw RendererError.message(L("Fonctions manquantes dans Shaders.metal."))
         }
         iteratePipeline = try device.makeComputePipelineState(function: iterate)
 
@@ -111,7 +111,7 @@ final class Renderer: NSObject, MTKViewDelegate {
             commandBuffer.addCompletedHandler { cb in
                 let ms = (cb.gpuEndTime - cb.gpuStartTime) * 1000
                 if let error = cb.error {
-                    DispatchQueue.main.async { model.errorMessage = "Erreur GPU : \(error.localizedDescription)" }
+                    DispatchQueue.main.async { model.errorMessage = String(format: L("Erreur GPU : %@"), error.localizedDescription) }
                 } else if ms > 0 {
                     DispatchQueue.main.async { model.lastRenderMilliseconds = ms }
                 }
