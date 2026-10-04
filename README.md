@@ -3,6 +3,8 @@
 <a id="english"></a>
 **English** · [Version française plus bas ↓](#francais)
 
+**⬇️ [Download the app here](https://github.com/Quick-Eyed-Sky/fractales/releases/latest)** (in the "Assets" section of the release)
+
 **A small native Mac app, free and open source, for wandering through fractals.**
 The computation runs on the graphics processor of Apple chips (M1, M2, M3, M4…) with Metal,
 and zooms go down to ×10³⁰ without the picture breaking up into blurry pixels.
@@ -35,6 +37,15 @@ open Fractales.app --args -AppleLanguages '(fr)'
 
 The English texts are in `source/en.lproj/Localizable.strings`; the French texts are written
 directly in the code. `tests/check_strings.py` checks that no text was left untranslated.
+
+## Download
+
+[Latest release](https://github.com/Quick-Eyed-Sky/fractales/releases/latest): download `Fractales-….zip` under **Assets** and unzip it. Mac with an
+Apple chip (M1 or later), macOS 14 or later.
+
+The app is free and not signed with a paid Apple developer account, so macOS blocks it the
+first time: double-click it, then go to **System Settings › Privacy & Security** and click
+**Open Anyway**. Only once. Step by step in `READ-ME.txt`, inside the zip.
 
 ## Building the app
 
@@ -74,6 +85,13 @@ direct 113-bit computation, for the five formulas and Julia, from the whole view
 of ×10²⁸. It runs on Linux (gcc + libquadmath), and on every push to GitHub along with building
 the app on a Mac (GitHub Actions).
 
+## Publishing a version
+
+`.github/workflows/release.yml` builds the app on a Mac and puts `Fractales-<version>.zip` in a
+draft release, with the version taken from `source/FractalModel.swift`. Run it from the Actions
+tab (**Release › Run workflow**), check the draft under **Releases**, then click **Publish
+release**. For the next version, raise `version` in `source/FractalModel.swift` first.
+
 ## Licence
 
 MIT, see [LICENSE](LICENSE).
@@ -84,6 +102,8 @@ MIT, see [LICENSE](LICENSE).
 # Fractales : explorer les fractales sur Mac, vite et profond
 
 [↑ English version above](#english) · **Français**
+
+**⬇️ [Téléchargez l'appli ici](https://github.com/Quick-Eyed-Sky/fractales/releases/latest)** (dans la section « Assets » de la release)
 
 **Une petite appli Mac native, gratuite et libre, pour se promener dans les fractales.**
 Le calcul tourne sur le processeur graphique des puces Apple (M1, M2, M3, M4…) avec Metal,
@@ -118,6 +138,16 @@ open Fractales.app --args -AppleLanguages '(en)'
 
 Les textes anglais sont dans `source/en.lproj/Localizable.strings` ; les textes français sont
 directement dans le code. `tests/check_strings.py` vérifie qu'aucun texte n'a été oublié.
+
+## Télécharger
+
+[Dernière version](https://github.com/Quick-Eyed-Sky/fractales/releases/latest) : téléchargez `Fractales-….zip` sous **Assets** et décompressez-le.
+Mac à puce Apple (M1 ou plus récent), macOS 14 ou plus récent.
+
+L'appli est gratuite et n'est pas signée par un compte développeur Apple payant : macOS la
+bloque la première fois. Double-cliquez dessus, puis allez dans **Réglages Système ›
+Confidentialité et sécurité** et cliquez sur **Ouvrir quand même**. Une seule fois suffit.
+Pas à pas dans `LISEZ-MOI.txt`, dans le zip.
 
 ## Construire l'appli
 
@@ -157,6 +187,14 @@ perturbation.
 un calcul direct en 113 bits, pour les cinq formules et Julia, de la vue d'ensemble jusqu'à un
 zoom de ×10²⁸. Il tourne sous Linux (gcc + libquadmath), et à chaque envoi sur GitHub avec la
 construction de l'appli sur un Mac (GitHub Actions).
+
+## Publier une version
+
+`.github/workflows/release.yml` construit l'appli sur un Mac et dépose `Fractales-<version>.zip`
+dans une release en brouillon, avec le numéro de version pris dans `source/FractalModel.swift`.
+Lancez-le depuis l'onglet Actions (**Release › Run workflow**), vérifiez le brouillon dans
+**Releases**, puis cliquez sur **Publish release**. Pour la version suivante, augmentez d'abord
+`version` dans `source/FractalModel.swift`.
 
 ## Licence
 
