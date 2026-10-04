@@ -165,6 +165,19 @@ final class FractalModel: ObservableObject {
 
     private var lastInteraction: CFTimeInterval = 0
     private var animation: ZoomAnimation?
+    private var glide: Glide?
+    /// Set by the canvas: where the pointer is (or the middle of the view if it is elsewhere),
+    /// for the Space-bar zoom.
+    var pointer: () -> (point: CGPoint, size: CGSize)? = { nil }
+
+    // Automatic voyage (Voyage.c).
+    /// Zoom speed of the voyage: 1 halves the view height every 1.5 seconds.
+    @Published var voyageSpeed: Double = 1
+    @Published private(set) var voyaging = false
+    @Published private(set) var voyagePhase: VoyagePhase = .diving
+    private var voyage = fc_voyage()
+    private var voyageLastStep: CFTimeInterval = 0
+    static let voyageBaseRate = log(2.0) / 1.5
     /// Where the Mandelbrot-type view was before opening a Julia set, to come back to it.
     private var savedView: (x: fc_num, y: fc_num, halfHeight: Double)?
 
@@ -172,17 +185,24 @@ final class FractalModel: ObservableObject {
 
     // MARK: Derived values
 
-    var maxIterations: Int {
+    var maxIterations: Int { Self.iterations(halfHeight: halfHeight, detail: detail) }
+
+    /// More iterations the deeper the view: the boundary needs them to show its detail.
+    static func iterations(halfHeight: Double, detail: Double = 1) -> Int {
         let octaves = max(0, log2(2.5 / halfHeight))
         let auto = 250 + 90 * octaves
         return Int(min(max(auto * detail, 64), 200_000))
     }
 
+    /// Half height of the whole figure (or of the Julia set).
+    var homeHalfHeight: Double { julia ? 1.3 : formula.home.halfHeight }
+
     var zoomFactor: Double { formula.home.halfHeight / halfHeight }
 
     /// True for a short while after the view moved: the renderer then works at half resolution.
-    var isInteracting: Bool { animation != nil || CACurrentMediaTime() - lastInteraction < 0.2 }
-    var isAnimating: Bool { animation != nil }
+    var isInteracting: Bool { isAnimating || CACurrentMediaTime() - lastInteraction < 0.2 }
+    /// True while the view moves by itself: the renderer then draws frame after frame.
+    var isAnimating: Bool { animation != nil || glide != nil || voyaging }
 
     func centerText(digits: Int? = nil) -> (x: String, y: String) {
         let d = digits ?? max(6, Int(-log10(halfHeight)) + 4)
@@ -207,6 +227,8 @@ final class FractalModel: ObservableObject {
 
     func goHome() {
         animation = nil
+        glide = nil
+        restartVoyageIfRunning()
         if julia {
             fc_zero(&centerX); fc_zero(&centerY)
             halfHeight = 1.3
@@ -220,6 +242,7 @@ final class FractalModel: ObservableObject {
 
     func apply(_ p: Preset) {
         animation = nil
+        glide = nil
         savedView = nil
         if formula != p.formula {
             formula = p.formula   // its didSet goes home; the preset's view replaces that below
@@ -232,6 +255,7 @@ final class FractalModel: ObservableObject {
         }
         fc_parse(&centerX, p.x); fc_parse(&centerY, p.y)
         halfHeight = p.halfHeight
+        restartVoyageIfRunning()
         viewChanged()
     }
 
@@ -245,7 +269,7 @@ final class FractalModel: ObservableObject {
 
     /// Moves the picture by `delta` points, as if dragged.
     func pan(by delta: CGVector, in size: CGSize) {
-        animation = nil
+        takeOver()
         let u = 2 * halfHeight / max(Double(size.height), 1)
         fc_add_double(&centerX, -Double(delta.dx) * u)
         fc_add_double(&centerY, -Double(delta.dy) * u * formula.ySign)
@@ -254,18 +278,30 @@ final class FractalModel: ObservableObject {
 
     /// Zooms by `factor` (>1 = closer), keeping the point under `point` where it is.
     func zoom(by factor: Double, at point: CGPoint, in size: CGSize) {
-        animation = nil
+        takeOver()
+        zoomInPlace(by: factor, at: point, in: size)
+        viewChanged()
+    }
+
+    private func zoomInPlace(by factor: Double, at point: CGPoint, in size: CGSize) {
         let d = offset(of: point, in: size)
         let newHalf = min(max(halfHeight / factor, Self.minHalfHeight), Self.maxHalfHeight)
         let keep = 1 - newHalf / halfHeight
         fc_add_double(&centerX, d.x * keep)
         fc_add_double(&centerY, d.y * keep)
         halfHeight = newHalf
-        viewChanged()
+    }
+
+    /// The user moves the view by hand: the voyage and any running zoom stop.
+    private func takeOver() {
+        animation = nil
+        voyaging = false
     }
 
     /// Same as zoom(by:at:in:), but smoothly over a third of a second.
     func animateZoom(by factor: Double, at point: CGPoint, in size: CGSize) {
+        takeOver()
+        glide = nil
         let d = offset(of: point, in: size)
         let target = min(max(halfHeight / factor, Self.minHalfHeight), Self.maxHalfHeight)
         animation = ZoomAnimation(start: CACurrentMediaTime(), duration: 0.35,
@@ -276,6 +312,8 @@ final class FractalModel: ObservableObject {
 
     /// Called by the renderer before each frame.
     func advanceAnimation(now: CFTimeInterval) {
+        advanceGlide(now: now)
+        advanceVoyage(now: now)
         guard let a = animation else { return }
         let t = min(max((now - a.start) / a.duration, 0), 1)
         let e = t * t * (3 - 2 * t)   // ease in and out
@@ -324,12 +362,116 @@ final class FractalModel: ObservableObject {
 
     private func enterJulia() {
         animation = nil
+        glide = nil
         savedView = (centerX, centerY, halfHeight)
         julia = true
         fc_zero(&centerX); fc_zero(&centerY)
         halfHeight = 1.3
+        restartVoyageIfRunning()
         viewChanged()
     }
+
+    // MARK: Space bar: zoom towards the pointer
+
+    /// Space pressed: zooms towards the pointer for as long as the key is held, and at least
+    /// long enough for a tap to zoom about ×3. With ⇧, backs out instead.
+    func startGlide(out: Bool) {
+        takeOver()
+        let now = CACurrentMediaTime()
+        glide = Glide(start: now, last: now, out: out)
+        viewChanged()
+    }
+
+    /// Space released.
+    func releaseGlide() {
+        glide?.released = true
+    }
+
+    private func advanceGlide(now: CFTimeInterval) {
+        guard var g = glide else { return }
+        let dt = min(max(now - g.last, 0), 0.1)
+        g.last = now
+        let ramp = min((now - g.start) / 0.1, 1)   // a soft start
+        let rate = Glide.rate * ramp * (g.out ? -1 : 1)
+        if let p = pointer() {
+            zoomInPlace(by: exp(rate * dt), at: p.point, in: p.size)
+        }
+        glide = g.released && now - g.start >= Glide.minimumDuration ? nil : g
+        revision += 1
+        lastInteraction = now
+    }
+
+    // MARK: Automatic voyage
+
+    func toggleVoyage() {
+        if voyaging { stopVoyage() } else { startVoyage() }
+    }
+
+    func startVoyage() {
+        animation = nil
+        glide = nil
+        fc_voyage_start(&voyage, UInt32.random(in: 1...UInt32.max))
+        voyageLastStep = 0
+        voyagePhase = .diving
+        voyaging = true
+        viewChanged()
+    }
+
+    func stopVoyage() {
+        guard voyaging else { return }
+        voyaging = false
+        viewChanged()   // and the renderer draws it once more at full resolution
+    }
+
+    private func restartVoyageIfRunning() {
+        guard voyaging else { return }
+        fc_voyage_start(&voyage, UInt32.random(in: 1...UInt32.max))
+        voyageLastStep = 0
+        voyagePhase = .diving
+    }
+
+    private func advanceVoyage(now: CFTimeInterval) {
+        guard voyaging else { return }
+        let dt = voyageLastStep == 0 ? 0 : now - voyageLastStep
+        voyageLastStep = now
+        var mx = 0.0, my = 0.0
+        let z = fc_voyage_step(&voyage, dt, Self.voyageBaseRate * voyageSpeed, halfHeight, &mx, &my)
+        fc_add_double(&centerX, mx)
+        fc_add_double(&centerY, my * formula.ySign)
+        halfHeight = min(max(halfHeight * z, Self.minHalfHeight), Self.maxHalfHeight)
+        revision += 1
+        lastInteraction = now
+    }
+
+    /// Called by the renderer with a small grid of escape counts (row 0 at the top) sampled from
+    /// a picture it computed, centred on (x, y) with half height `probeHalf`.
+    func voyageLook(_ samples: [Float], width: Int, height: Int, x: fc_num, y: fc_num, probeHalf: Double) {
+        guard voyaging, samples.count >= width * height else { return }
+        var x = x, y = y
+        let ox = fc_diff_to_double(&x, &centerX)
+        let oy = fc_diff_to_double(&y, &centerY) * formula.ySign
+        samples.withUnsafeBufferPointer { buffer in
+            fc_voyage_look(&voyage, buffer.baseAddress, Int32(width), Int32(height), ox, oy, probeHalf,
+                           halfHeight, Self.minHalfHeight, homeHalfHeight)
+        }
+        let phase: VoyagePhase = voyage.backing == 2 ? .climbing : voyage.backing == 1 ? .backingOut : .diving
+        if phase != voyagePhase { voyagePhase = phase }
+    }
+}
+
+enum VoyagePhase {
+    case diving       // heading for the detail
+    case backingOut   // nothing to see here: backing out to look further
+    case climbing     // at the deepest zoom the engine allows: climbing back to dive elsewhere
+}
+
+private struct Glide {
+    static let rate = log(3.0) / 0.5        // ×3 every half second
+    static let minimumDuration = 0.5        // so a tap zooms about ×3
+    let start: CFTimeInterval
+    var last: CFTimeInterval
+    let out: Bool
+    var released = false
 }
 
 private struct ZoomAnimation {

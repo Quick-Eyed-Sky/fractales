@@ -15,6 +15,7 @@ final class Renderer: NSObject, MTKViewDelegate {
     private let device: MTLDevice
     private let queue: MTLCommandQueue
     private let iteratePipeline: MTLComputePipelineState
+    private let probePipeline: MTLComputePipelineState
     private let colorPipeline: MTLRenderPipelineState
 
     private var counts: MTLTexture?
@@ -34,6 +35,13 @@ final class Renderer: NSObject, MTKViewDelegate {
     private var computedSize = (0, 0)
     private var lastCommandBuffer: MTLCommandBuffer?
     private var settleScheduled = false
+
+    // Automatic voyage: resolution that keeps the frames coming, and the grid of counts it reads.
+    private var voyageScale = 0.5
+    private var probeBuffer: MTLBuffer?
+    private var probeInFlight = false
+    private var lastProbe: CFTimeInterval = 0
+    static let probeRows = 60
 
     static let bailout2: Float = 65536   // escape radius 256: smooth colours without bands
 
@@ -56,11 +64,13 @@ final class Renderer: NSObject, MTKViewDelegate {
         }
         let library = try device.makeLibrary(source: source, options: options)
         guard let iterate = library.makeFunction(name: "iterate"),
+              let probe = library.makeFunction(name: "probe"),
               let vertex = library.makeFunction(name: "colorVertex"),
               let fragment = library.makeFunction(name: "colorFragment") else {
             throw RendererError.message(L("Fonctions manquantes dans Shaders.metal."))
         }
         iteratePipeline = try device.makeComputePipelineState(function: iterate)
+        probePipeline = try device.makeComputePipelineState(function: probe)
 
         let desc = MTLRenderPipelineDescriptor()
         desc.vertexFunction = vertex
@@ -82,7 +92,8 @@ final class Renderer: NSObject, MTKViewDelegate {
 
         let full = view.drawableSize
         let interacting = model.isInteracting
-        let scale = interacting ? 0.5 : 1.0
+        let voyaging = model.voyaging
+        let scale = voyaging ? voyageScale : (interacting ? 0.5 : 1.0)
         let width = max(1, Int(full.width * scale))
         let height = max(1, Int(full.height * scale))
 
@@ -91,6 +102,11 @@ final class Renderer: NSObject, MTKViewDelegate {
             encodeIterations(commandBuffer, width: width, height: height)
             computedRevision = model.revision
             computedSize = (width, height)
+            let now = CACurrentMediaTime()
+            if voyaging && !probeInFlight && now - lastProbe > 0.15 {
+                lastProbe = now
+                encodeProbe(commandBuffer, width: width, height: height)
+            }
         }
         loadPaletteIfNeeded()
 
@@ -113,7 +129,10 @@ final class Renderer: NSObject, MTKViewDelegate {
                 if let error = cb.error {
                     DispatchQueue.main.async { model.errorMessage = String(format: L("Erreur GPU : %@"), error.localizedDescription) }
                 } else if ms > 0 {
-                    DispatchQueue.main.async { model.lastRenderMilliseconds = ms }
+                    DispatchQueue.main.async { [weak self] in
+                        model.lastRenderMilliseconds = ms
+                        self?.adaptVoyageScale(milliseconds: ms)
+                    }
                 }
             }
         }
@@ -129,6 +148,59 @@ final class Renderer: NSObject, MTKViewDelegate {
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) { [weak self, weak view] in
                 self?.settleScheduled = false
                 view?.needsDisplay = true
+            }
+        }
+    }
+
+    /// During the voyage, the resolution follows the GPU: lower when a frame takes too long,
+    /// higher again when there is time to spare. In steps of 1/20, so textures are not
+    /// reallocated every frame.
+    private func adaptVoyageScale(milliseconds ms: Double) {
+        guard model.voyaging else { return }
+        if ms > 28 {
+            voyageScale = max(0.3, voyageScale - 0.05)
+        } else if ms < 12 {
+            voyageScale = min(1.0, voyageScale + 0.05)
+        }
+        voyageScale = (voyageScale * 20).rounded() / 20
+    }
+
+    // MARK: - Voyage probe
+
+    /// Copies a small grid of the counts just computed and hands it to the voyage once the GPU
+    /// is done, together with the view it was computed for.
+    private func encodeProbe(_ commandBuffer: MTLCommandBuffer, width: Int, height: Int) {
+        guard let counts = counts else { return }
+        let rows = Self.probeRows
+        let columns = min(max(Int((Double(rows) * Double(width) / Double(max(height, 1))).rounded()), 8), 240)
+        let bytes = rows * columns * MemoryLayout<Float>.stride
+        if probeBuffer == nil || probeBuffer!.length < bytes {
+            probeBuffer = device.makeBuffer(length: bytes, options: .storageModeShared)
+        }
+        guard let buffer = probeBuffer, let encoder = commandBuffer.makeComputeCommandEncoder() else { return }
+        var size = SIMD2<UInt32>(UInt32(columns), UInt32(rows))
+        encoder.setComputePipelineState(probePipeline)
+        encoder.setTexture(counts, index: 0)
+        encoder.setBuffer(buffer, offset: 0, index: 0)
+        encoder.setBytes(&size, length: MemoryLayout<SIMD2<UInt32>>.stride, index: 1)
+        encoder.dispatchThreads(MTLSize(width: columns, height: rows, depth: 1),
+                                threadsPerThreadgroup: MTLSize(width: 16, height: 8, depth: 1))
+        encoder.endEncoding()
+
+        probeInFlight = true
+        let x = model.centerX, y = model.centerY, half = model.halfHeight
+        let model = self.model
+        commandBuffer.addCompletedHandler { [weak self] cb in
+            var samples: [Float] = []
+            if cb.error == nil {
+                let pointer = buffer.contents().assumingMemoryBound(to: Float.self)
+                samples = Array(UnsafeBufferPointer(start: pointer, count: rows * columns))
+            }
+            DispatchQueue.main.async {
+                self?.probeInFlight = false
+                if !samples.isEmpty {
+                    model.voyageLook(samples, width: columns, height: rows, x: x, y: y, probeHalf: half)
+                }
             }
         }
     }
@@ -184,17 +256,20 @@ final class Renderer: NSObject, MTKViewDelegate {
     private func updateReference(pixelSize: Double, maxIter: Int) {
         let limbs = Int(fc_limbs_for_pixel_size(pixelSize))
         let key = ReferenceKey(formula: model.formula.rawValue, julia: model.julia,
-                               kx: model.juliaK.x, ky: model.juliaK.y, maxIter: maxIter)
+                               kx: model.juliaK.x, ky: model.juliaK.y)
         var centerX = model.centerX, centerY = model.centerY
         let dx = abs(fc_diff_to_double(&centerX, &refX))
         let dy = abs(fc_diff_to_double(&centerY, &refY))
         let far = max(dx, dy) > 2 * model.halfHeight
-        if key == refKey && limbs <= refLimbs && !far && orbitA != nil { return }
+        if key == refKey && limbs <= refLimbs && maxIter <= refMaxIter && !far && orbitA != nil { return }
+        // A quarter more iterations than needed: while zooming in, the count grows a little every
+        // frame, and an orbit longer than needed serves as well.
+        let orbitIter = maxIter + maxIter / 4
 
         // The GPU may still be reading the old orbits.
         lastCommandBuffer?.waitUntilCompleted()
 
-        let bytes = (maxIter + 1) * 2 * MemoryLayout<Float>.stride
+        let bytes = (orbitIter + 1) * 2 * MemoryLayout<Float>.stride
         if orbitA == nil || orbitA!.length < bytes {
             orbitA = device.makeBuffer(length: bytes, options: .storageModeShared)
         }
@@ -213,17 +288,19 @@ final class Renderer: NSObject, MTKViewDelegate {
             }
             guard let b = orbitB else { return }
             let outB = b.contents().assumingMemoryBound(to: Float.self)
-            lenA = UInt32(fc_orbit(formula, &refX, &refY, &kx, &ky, Int32(limbs), Int32(maxIter), Double(Self.bailout2), outA))
-            lenB = UInt32(fc_orbit(formula, &zero, &zero, &kx, &ky, Int32(limbs), Int32(maxIter), Double(Self.bailout2), outB))
+            lenA = UInt32(fc_orbit(formula, &refX, &refY, &kx, &ky, Int32(limbs), Int32(orbitIter), Double(Self.bailout2), outA))
+            lenB = UInt32(fc_orbit(formula, &zero, &zero, &kx, &ky, Int32(limbs), Int32(orbitIter), Double(Self.bailout2), outB))
         } else {
-            lenA = UInt32(fc_orbit(formula, &zero, &zero, &refX, &refY, Int32(limbs), Int32(maxIter), Double(Self.bailout2), outA))
+            lenA = UInt32(fc_orbit(formula, &zero, &zero, &refX, &refY, Int32(limbs), Int32(orbitIter), Double(Self.bailout2), outA))
             orbitB = a
             lenB = lenA
         }
         refKey = key
         refLimbs = limbs
+        refMaxIter = orbitIter
     }
     private var refLimbs = 0
+    private var refMaxIter = 0
 
     // MARK: - Palette
 
@@ -251,7 +328,6 @@ private struct ReferenceKey: Equatable {
     let julia: Bool
     let kx: Double
     let ky: Double
-    let maxIter: Int
 }
 
 enum RendererError: LocalizedError {

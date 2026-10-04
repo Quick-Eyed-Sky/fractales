@@ -216,6 +216,26 @@ int main(int argc, char **argv) {
         }
         check(d.name, v, W, H, 0.05, outdir);
     }
+
+    // The voyage's probe picks the texel at the centre of each cell of its grid.
+    {
+        const uint tw = 97, th = 61, pw = 10, ph = 6;
+        std::vector<float> pixels(4 * tw * th);
+        for (uint i = 0; i < tw * th; i++) pixels[4 * i] = (float)i;
+        texture2d<float, access::read> tex; tex.w = tw; tex.h = th; tex.data = pixels.data();
+        std::vector<float> out(pw * ph, -7);
+        uint2 size(pw, ph);
+        for (uint y = 0; y < ph; y++)
+            for (uint x = 0; x < pw; x++) probe(tex, out.data(), size, uint2(x, y));
+        int bad = 0;
+        for (uint y = 0; y < ph; y++)
+            for (uint x = 0; x < pw; x++) {
+                uint ex = (uint)((x + 0.5) * tw / pw), ey = (uint)((y + 0.5) * th / ph);
+                bad += out[y * pw + x] != (float)(ey * tw + ex);
+            }
+        if (bad) failures++;
+        printf("%s probe grid: %d wrong samples\n", bad ? "FAIL" : "ok  ", bad);
+    }
     printf(failures ? "%d FAILURES\n" : "all shader tests passed\n", failures);
     return failures != 0;
 }

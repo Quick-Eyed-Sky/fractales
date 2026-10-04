@@ -24,11 +24,12 @@ echo "Construction de Fractales $VERSION ..."
 
 rm -rf "$BUILD"; mkdir -p "$BUILD"
 clang -O3 -std=c11 -Wall -target "$TARGET" -c "$HERE/FractalCore.c" -o "$BUILD/FractalCore.o"
+clang -O3 -std=c11 -Wall -target "$TARGET" -c "$HERE/Voyage.c" -o "$BUILD/Voyage.o"
 swiftc -O -swift-version 5 -parse-as-library \
   -target "$TARGET" \
   -import-objc-header "$HERE/FractalCore.h" \
-  "$HERE/FractalModel.swift" "$HERE/Renderer.swift" "$HERE/CanvasView.swift" "$HERE/FractalesApp.swift" \
-  "$BUILD/FractalCore.o" \
+  "$HERE/FractalModel.swift" "$HERE/Renderer.swift" "$HERE/CanvasView.swift" "$HERE/Previews.swift" "$HERE/FractalesApp.swift" \
+  "$BUILD/FractalCore.o" "$BUILD/Voyage.o" \
   -o "$BUILD/Fractales"
 
 rm -rf "$APP"

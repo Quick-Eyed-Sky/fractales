@@ -11,9 +11,12 @@ struct FractalesApp: App {
         Window("Fractales", id: "main") {
             ContentView().environmentObject(model)
         }
-        .defaultSize(width: 1280, height: 800)
+        .defaultSize(width: 1440, height: 860)
         .commands {
             CommandMenu(L("Vue")) {
+                Button(model.voyaging ? L("Pause du voyage") : L("Lancer le voyage")) { model.toggleVoyage() }
+                    .keyboardShortcut("v", modifiers: [])
+                Divider()
                 Button(L("Zoomer")) { model.animateZoomAtCenter(3) }.keyboardShortcut("+", modifiers: [])
                 Button(L("Dézoomer")) { model.animateZoomAtCenter(1 / 3.0) }.keyboardShortcut("-", modifiers: [])
                 Button(L("Vue d'ensemble")) { model.goHome() }.keyboardShortcut("r", modifiers: [])
@@ -38,6 +41,8 @@ struct ContentView: View {
 
     var body: some View {
         HStack(spacing: 0) {
+            FigureList().frame(width: 236)
+            Divider()
             ZStack(alignment: .bottomLeading) {
                 MetalCanvas(model: model)
                 InfoOverlay().padding(10)
@@ -103,12 +108,21 @@ struct ControlPanel: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 18) {
-                section(L("Figures")) {
-                    Menu(L("Choisir une figure…")) {
-                        ForEach(presets) { p in
-                            Button(p.name) { model.apply(p) }
-                        }
+                section(L("Voyage infini")) {
+                    Button {
+                        model.toggleVoyage()
+                    } label: {
+                        Label(model.voyaging ? L("Pause du voyage") : L("Lancer le voyage"),
+                              systemImage: model.voyaging ? "pause.fill" : "play.fill")
+                            .frame(maxWidth: .infinity)
                     }
+                    .buttonStyle(.borderedProminent)
+                    .controlSize(.large)
+                    LabeledContent(L("Vitesse")) {
+                        Slider(value: Binding(get: { log2(model.voyageSpeed) }, set: { model.voyageSpeed = pow(2, $0) }),
+                               in: -2...2)
+                    }
+                    hint(voyageText)
                 }
 
                 section(L("Formule")) {
@@ -136,10 +150,10 @@ struct ControlPanel: View {
                 }
 
                 section(L("Couleurs")) {
-                    Picker("", selection: $model.paletteIndex) {
-                        ForEach(palettes) { p in Text(p.name).tag(p.id) }
+                    LazyVGrid(columns: [GridItem(.flexible(), spacing: 8), GridItem(.flexible(), spacing: 8)],
+                              spacing: 8) {
+                        ForEach(palettes) { p in swatch(p) }
                     }
-                    .labelsHidden()
                     LabeledContent(L("Densité")) {
                         Slider(value: $model.colorDensity, in: 0.02...2)
                     }
@@ -152,7 +166,8 @@ struct ControlPanel: View {
                     VStack(alignment: .leading, spacing: 4) {
                         hint(L("Glisser, ou deux doigts : déplacer"))
                         hint(L("Pincer, molette, ⌘ + deux doigts : zoomer"))
-                        hint(L("Double-clic : zoom ×3   ⇧ double-clic, clic droit : arrière"))
+                        hint(L("Espace : zoom vers le pointeur, tant qu'on la tient"))
+                        hint(L("⇧ Espace, clic droit : zoom arrière"))
                         hint(L("Flèches, + et − ; R : vue d'ensemble"))
                     }
                     Button(L("Vue d'ensemble")) { model.goHome() }
@@ -165,6 +180,45 @@ struct ControlPanel: View {
             }
             .padding(16)
         }
+    }
+
+    private var voyageText: String {
+        guard model.voyaging else {
+            return L("L'appli plonge toute seule vers les zones riches en détails, sans fin. Touche V. Toucher l'image reprend la main.")
+        }
+        switch model.voyagePhase {
+        case .diving: return L("Le pilote suit les contours et évite le vide.")
+        case .backingOut: return L("Rien à voir ici : le pilote recule pour chercher du détail.")
+        case .climbing: return L("Tout au fond : le pilote remonte pour replonger ailleurs.")
+        }
+    }
+
+    /// A palette as a strip of its colours, to click.
+    private func swatch(_ p: Palette) -> some View {
+        let selected = model.paletteIndex == p.id
+        let sorted = p.stops.sorted { $0.0 < $1.0 }
+        // The palette loops: end on the first colour again.
+        var stops = sorted.map { Gradient.Stop(color: Color(red: $0.1 / 255, green: $0.2 / 255, blue: $0.3 / 255),
+                                               location: $0.0) }
+        if let first = sorted.first {
+            stops.append(Gradient.Stop(color: Color(red: first.1 / 255, green: first.2 / 255, blue: first.3 / 255),
+                                       location: 1))
+        }
+        return Button {
+            model.paletteIndex = p.id
+        } label: {
+            VStack(alignment: .leading, spacing: 3) {
+                RoundedRectangle(cornerRadius: 5)
+                    .fill(LinearGradient(gradient: Gradient(stops: stops), startPoint: .leading, endPoint: .trailing))
+                    .frame(height: 22)
+                    .overlay(RoundedRectangle(cornerRadius: 5)
+                        .strokeBorder(selected ? Color.accentColor : Color.primary.opacity(0.15),
+                                      lineWidth: selected ? 2 : 1))
+                Text(p.name).font(.caption).foregroundStyle(selected ? .primary : .secondary)
+            }
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
     }
 
     @ViewBuilder
