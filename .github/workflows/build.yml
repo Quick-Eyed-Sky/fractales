@@ -1,0 +1,28 @@
+name: Build
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  mac:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check the shaders compile
+        run: xcrun -sdk macosx metal -std=metal3.0 -c source/Shaders.metal -o /tmp/Shaders.air
+      - name: Build the app
+        run: zsh source/build_app.sh
+      - name: Zip the app
+        run: ditto -c -k --keepParent Fractales.app Fractales.zip
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Fractales
+          path: Fractales.zip
+
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Core and shader tests
+        run: sh tests/run_tests.sh
