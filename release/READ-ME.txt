@@ -1,0 +1,32 @@
+Fractales — How to launch the app
+=================================
+
+Fractales is free and isn't signed with a paid Apple Developer account.
+So the first time you open it, macOS shows a security warning.
+This is normal: the app isn't dangerous, you just need to allow it, once.
+
+You need a Mac with an Apple chip (M1 or later) and macOS 14 or later.
+
+0. Move "Fractales.app" to your Applications folder (optional, but tidier).
+
+METHOD 1 (works on every recent macOS)
+--------------------------------------
+1. Double-click "Fractales.app". macOS says it can't be opened: click "Done" (or "OK").
+2. Open System Settings (Apple menu > System Settings).
+3. Go to "Privacy & Security".
+4. Scroll down to the Security section: you'll see a message like
+   "Fractales was blocked to protect your Mac".
+5. Click "Open Anyway", then confirm with your password or Touch ID.
+6. Fractales opens. From now on, a normal double-click is enough.
+
+METHOD 2 (macOS 14 Sonoma only)
+-------------------------------
+1. Right-click (or Ctrl-click) "Fractales.app".
+2. Choose "Open" from the menu.
+3. In the warning window, click "Open" to confirm.
+
+The app is in English, or in French on a Mac set to French.
+
+---
+Fractales is free software (MIT licence).
+Source code: https://github.com/Quick-Eyed-Sky/fractales

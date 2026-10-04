@@ -1,0 +1,33 @@
+Fractales — Comment lancer l'application
+========================================
+
+Fractales est gratuite et n'est pas signée par un compte développeur Apple payant.
+Résultat : la première fois que vous l'ouvrez, macOS affiche un avertissement de sécurité.
+C'est normal : l'application n'est pas dangereuse, il suffit de l'autoriser une seule fois.
+
+Il faut un Mac à puce Apple (M1 ou plus récent) et macOS 14 ou plus récent.
+
+0. Rangez "Fractales.app" dans le dossier Applications (facultatif, mais plus propre).
+
+MÉTHODE 1 (marche sur tous les macOS récents)
+---------------------------------------------
+1. Double-cliquez sur "Fractales.app". macOS dit qu'elle ne peut pas être ouverte :
+   cliquez sur "Terminé" (ou "OK").
+2. Ouvrez les Réglages Système (menu Pomme > Réglages Système).
+3. Allez dans "Confidentialité et sécurité".
+4. Descendez jusqu'à la section Sécurité : un message indique
+   "Fractales a été bloqué pour protéger votre Mac".
+5. Cliquez sur "Ouvrir quand même", puis confirmez avec votre mot de passe ou Touch ID.
+6. Fractales s'ouvre. Les fois suivantes, un double-clic normal suffit.
+
+MÉTHODE 2 (macOS 14 Sonoma seulement)
+-------------------------------------
+1. Faites un clic droit (ou Ctrl + clic) sur "Fractales.app".
+2. Choisissez "Ouvrir" dans le menu.
+3. Dans la fenêtre d'avertissement, cliquez sur "Ouvrir" pour confirmer.
+
+L'application est en français sur un Mac réglé en français, en anglais sinon.
+
+---
+Fractales est un logiciel libre (licence MIT).
+Code source : https://github.com/Quick-Eyed-Sky/fractales
