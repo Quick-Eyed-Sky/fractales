@@ -20,6 +20,23 @@ et les zooms descendent jusqu'à ×10³⁰ sans que l'image se dégrade en pixel
 - **Six palettes**, avec densité et décalage réglables ; changer les couleurs ne relance pas le
   calcul.
 
+## En français et en anglais
+
+L'appli parle français sur un Mac réglé en français et anglais sur un Mac réglé en anglais (ou
+dans toute autre langue). Pour la voir dans l'autre langue sans changer celle du Mac : Réglages
+Système › Général › Langue et région › Applications, bouton +, choisir Fractales et la langue.
+Ou, depuis le Terminal :
+
+```
+open Fractales.app --args -AppleLanguages '(en)'
+```
+
+*Fractales is a free, open-source Mac app for exploring fractals, in English and French. It
+follows the language of your Mac.*
+
+Les textes anglais sont dans `source/en.lproj/Localizable.strings` ; les textes français sont
+directement dans le code. `tests/check_strings.py` vérifie qu'aucun texte n'a été oublié.
+
 ## Construire l'appli
 
 Il faut seulement les outils en ligne de commande d'Apple (pas Xcode complet) :

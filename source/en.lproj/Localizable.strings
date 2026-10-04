@@ -1,0 +1,62 @@
+/* Fractales: English texts. The keys are the French texts written in the Swift sources.
+   Every L("...") in source/*.swift needs a line here (tests/check_strings.sh checks it). */
+
+/* Menu */
+"Vue" = "Navigate";
+"Zoomer" = "Zoom In";
+"Dézoomer" = "Zoom Out";
+"Vue d'ensemble" = "Whole Figure";
+"Revenir à l'ensemble" = "Back to the Main Set";
+"Ensemble de Julia du centre" = "Julia Set of the Centre";
+
+/* Information at the bottom left */
+"Zoom %@  ·  %ld itérations  ·  %ld ms" = "Zoom %@  ·  %ld iterations  ·  %ld ms";
+
+/* Right-hand panel */
+"Figures" = "Figures";
+"Choisir une figure…" = "Choose a figure…";
+"Formule" = "Formula";
+"Ensemble de Julia" = "Julia set";
+"J revient à l'ensemble de départ." = "J goes back to the main set.";
+"⌥-clic sur l'image : l'ensemble de Julia de ce point." = "⌥-click on the picture: the Julia set of that point.";
+"Détails" = "Detail";
+"%ld itérations au plus par pixel. Plus de détails, rendu plus lent." = "At most %ld iterations per pixel. More detail, slower rendering.";
+"Couleurs" = "Colours";
+"Densité" = "Density";
+"Décalage" = "Offset";
+"Navigation" = "Navigation";
+"Glisser, ou deux doigts : déplacer" = "Drag, or two fingers: move";
+"Pincer, molette, ⌘ + deux doigts : zoomer" = "Pinch, scroll wheel, ⌘ + two fingers: zoom";
+"Double-clic : zoom ×3   ⇧ double-clic, clic droit : arrière" = "Double-click: zoom ×3   ⇧ double-click, right-click: back out";
+"Flèches, + et − ; R : vue d'ensemble" = "Arrows, + and −; R: whole figure";
+"Fractales %@ · rendu Metal" = "Fractales %@ · Metal rendering";
+
+/* Formulas */
+"Tricorne" = "Tricorn";
+"Celtique" = "Celtic";
+
+/* Ready-made figures */
+"Vallée des hippocampes" = "Seahorse Valley";
+"Vallée des éléphants" = "Elephant Valley";
+"Spirale profonde" = "Deep spiral";
+"Julia : lapin de Douady" = "Julia: Douady's rabbit";
+"Julia : dendrite" = "Julia: dendrite";
+"Julia : San Marco" = "Julia: San Marco";
+"Julia : spirales" = "Julia: spirals";
+"Burning Ship : l'armada" = "Burning Ship: the armada";
+
+/* Palettes */
+"Classique" = "Classic";
+"Feu" = "Fire";
+"Océan" = "Ocean";
+"Aurore" = "Aurora";
+"Arc-en-ciel" = "Rainbow";
+"Encre" = "Ink";
+
+/* Errors */
+"Le moteur Metal n'a pas démarré : %@" = "The Metal engine did not start: %@";
+"Aucun processeur graphique Metal trouvé." = "No Metal graphics processor found.";
+"Pas de file de commandes Metal." = "No Metal command queue.";
+"Shaders.metal est introuvable dans l'appli. Reconstruis-la avec build_app.sh." = "Shaders.metal is missing from the app. Rebuild it with build_app.sh.";
+"Fonctions manquantes dans Shaders.metal." = "Functions missing from Shaders.metal.";
+"Erreur GPU : %@" = "GPU error: %@";
