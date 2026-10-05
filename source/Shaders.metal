@@ -2,6 +2,7 @@
 //
 // Pass 1, `iterate` (compute): for every pixel, the smooth escape count, or -1 inside the set,
 // into a 32-bit float texture. It only runs again when the view changes.
+// `probe` (compute): copies a small grid of those counts for the automatic voyage.
 // Pass 2, `colorVertex` / `colorFragment`: turns those counts into colours through a palette,
 // so changing colours costs nothing.
 //
@@ -121,6 +122,23 @@ kernel void iterate(constant FractalParams &p [[buffer(0)]],
         }
     }
     out.write(float4(result, 0.0f, 0.0f, 0.0f), gid);
+}
+
+// ---- Probe for the automatic voyage ----
+
+// Copies an evenly spaced grid of escape counts (size.x by size.y, row 0 at the top) out of
+// the counts texture, for the voyage to read on the CPU (Voyage.c). Each sample is the texel
+// at the centre of its grid cell.
+kernel void probe(texture2d<float, access::read> counts [[texture(0)]],
+                  device float *out [[buffer(0)]],
+                  constant uint2 &size [[buffer(1)]],
+                  uint2 gid [[thread_position_in_grid]])
+{
+    if (gid.x >= size.x || gid.y >= size.y) return;
+    uint w = counts.get_width(), h = counts.get_height();
+    uint x = min((2 * gid.x + 1) * w / (2 * size.x), w - 1);
+    uint y = min((2 * gid.y + 1) * h / (2 * size.y), h - 1);
+    out[gid.y * size.x + gid.x] = counts.read(uint2(x, y)).r;
 }
 
 // ---- Colouring ----

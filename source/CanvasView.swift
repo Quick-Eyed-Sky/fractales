@@ -8,12 +8,47 @@ final class CanvasView: MTKView {
     var model: FractalModel!
     var renderer: Renderer?   // MTKView keeps its delegate weakly
     private var lastDrag: CGPoint?
+    private var spaceMonitor: Any?
 
     override var acceptsFirstResponder: Bool { true }
 
     override func viewDidMoveToWindow() {
         super.viewDidMoveToWindow()
         window?.makeFirstResponder(self)
+        if spaceMonitor == nil {
+            // The Space bar zooms wherever the keyboard focus is (a slider, a button of the
+            // panel), except while typing text.
+            spaceMonitor = NSEvent.addLocalMonitorForEvents(matching: [.keyDown, .keyUp]) { [weak self] event in
+                guard let self = self, event.keyCode == 49, event.window === self.window, self.window != nil,
+                      !event.modifierFlags.contains(.command),
+                      !(self.window?.firstResponder is NSText) else { return event }
+                if event.type == .keyDown {
+                    if !event.isARepeat { self.model.startGlide(out: event.modifierFlags.contains(.shift)) }
+                } else {
+                    self.model.releaseGlide()
+                }
+                return nil
+            }
+            // A Space key released in another window never reaches us: stop there too.
+            NotificationCenter.default.addObserver(forName: NSWindow.didResignKeyNotification, object: nil,
+                                                   queue: .main) { [weak self] note in
+                if let self = self, note.object as? NSWindow === self.window { self.model.releaseGlide() }
+            }
+        }
+    }
+
+    deinit {
+        if let monitor = spaceMonitor { NSEvent.removeMonitor(monitor) }
+    }
+
+    /// Where the Space bar zooms: the pointer if it is over the picture, else the middle.
+    func zoomPoint() -> (point: CGPoint, size: CGSize) {
+        var p = center
+        if let window = window {
+            let q = convert(window.mouseLocationOutsideOfEventStream, from: nil)
+            if bounds.contains(q) { p = q }
+        }
+        return (p, bounds.size)
     }
 
     private func point(_ event: NSEvent) -> CGPoint { convert(event.locationInWindow, from: nil) }
@@ -26,11 +61,6 @@ final class CanvasView: MTKView {
         let p = point(event)
         if event.modifierFlags.contains(.option) {
             model.openJulia(at: p, in: bounds.size)
-            return
-        }
-        if event.clickCount == 2 {
-            let zoomOut = event.modifierFlags.contains(.shift)
-            model.animateZoom(by: zoomOut ? 1 / 3.0 : 3, at: p, in: bounds.size)
             return
         }
         lastDrag = p
@@ -122,6 +152,7 @@ struct MetalCanvas: NSViewRepresentable {
             DispatchQueue.main.async { model.errorMessage = L("Aucun processeur graphique Metal trouvé.") }
         }
         model.requestRedraw = { [weak view] in view?.needsDisplay = true }
+        model.pointer = { [weak view] in view?.zoomPoint() }
         return view
     }
 

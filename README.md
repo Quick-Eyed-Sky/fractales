@@ -9,19 +9,26 @@
 The computation runs on the graphics processor of Apple chips (M1, M2, M3, M4…) with Metal,
 and zooms go down to ×10³⁰ without the picture breaking up into blurry pixels.
 
-> Work in progress: the rendering engine is here; infinite automatic zoom, 4K export and the
+> Work in progress: the rendering engine and the endless voyage are here; 4K export and the
 > colour editor come next.
 
 ## What it does
 
+- **Endless voyage**: press **Start the Voyage** (or the V key) and just watch. The app zooms in
+  continuously and steers by itself towards the richest detail, following the edges of the set,
+  avoiding both the void and the grain where no shape ever comes out. If everything in view
+  turns dull it backs out to look elsewhere; at the deepest zoom it climbs back up and dives
+  again somewhere else. Touch the picture to take back control.
 - **Five formulas**: Mandelbrot, Burning Ship, Tricorn, Multibrot z³, Celtic, and for each one
   **the Julia set** of any point (⌥-click on the picture, or the J key).
-- **Ready-made figures**: Seahorse Valley, Douady's rabbit, the Burning Ship armada…
+- **Ready-made figures**, each with its preview in the list on the left (in the current
+  colours): Seahorse Valley, Douady's rabbit, the Burning Ship armada…
 - **Smooth navigation**: drag or two fingers to move, pinch or scroll wheel to zoom under the
-  pointer, double-click for an animated ×3 zoom. While moving, the picture is computed at half
+  pointer, **Space** to zoom towards the pointer (tap: ×3; hold: keeps going), ⇧ Space or
+  right-click to zoom out. While moving, the picture is computed at half
   resolution to keep up, then recomputed at full resolution as soon as it stops.
 - **Deep zooms** down to ×10³⁰ (see [How it works](#how-it-works)).
-- **Six palettes**, with adjustable density and offset; changing the colours does not restart
+- **Six palettes**, shown as colour strips, with adjustable density and offset; changing the colours does not restart
   the computation.
 
 ## In English and French
@@ -72,17 +79,21 @@ method), which avoids the usual perturbation artefacts.
 | File | Role |
 |---|---|
 | `source/FractalCore.c` | high-precision fixed-point numbers, reference orbits |
+| `source/Voyage.c` | the endless voyage's pilot, and the previews of the figures |
 | `source/Shaders.metal` | per-pixel computation (perturbation) and colouring, compiled at launch |
 | `source/Renderer.swift` | Metal control: orbits, textures, half resolution while moving |
 | `source/FractalModel.swift` | view state: formula, high-precision centre, zoom, palettes |
 | `source/CanvasView.swift` | mouse, trackpad, keyboard |
+| `source/Previews.swift` | list of figures with their previews |
 | `source/FractalesApp.swift` | window and settings panel (SwiftUI) |
 
 ## Tests
 
 `tests/run_tests.sh` runs the GPU kernel on the main processor and compares each picture with a
 direct 113-bit computation, for the five formulas and Julia, from the whole view down to a zoom
-of ×10²⁸. It runs on Linux (gcc + libquadmath), and on every push to GitHub along with building
+of ×10²⁸. It also flies the endless voyage in simulation over every formula, and checks that it
+never gets lost in the void or the black and that it turns round before the deepest zoom. It
+runs on Linux (gcc + libquadmath), and on every push to GitHub along with building
 the app on a Mac (GitHub Actions).
 
 ## Publishing a version
@@ -109,20 +120,26 @@ MIT, see [LICENSE](LICENSE).
 Le calcul tourne sur le processeur graphique des puces Apple (M1, M2, M3, M4…) avec Metal,
 et les zooms descendent jusqu'à ×10³⁰ sans que l'image se dégrade en pixels flous.
 
-> Version de travail : le moteur de rendu est là ; le zoom automatique infini, l'export 4K et
+> Version de travail : le moteur de rendu et le voyage infini sont là ; l'export 4K et
 > l'éditeur de couleurs arrivent ensuite.
 
 ## Ce qu'elle fait
 
+- **Voyage infini** : appuyez sur **Lancer le voyage** (ou la touche V) et regardez. L'appli
+  zoome sans fin et se dirige toute seule vers les zones les plus riches en détails, en suivant
+  les contours de l'ensemble, sans se perdre dans le vide ni dans le grain où aucune forme
+  n'apparaît. Si tout devient terne, elle recule pour chercher ailleurs ; au zoom le plus profond,
+  elle remonte et replonge ailleurs. Toucher l'image reprend la main.
 - **Cinq formules** : Mandelbrot, Burning Ship, Tricorne, Multibrot z³, Celtique, et pour
   chacune **l'ensemble de Julia** de n'importe quel point (⌥-clic sur l'image, ou la touche J).
-- **Des figures toutes prêtes** : vallée des hippocampes, lapin de Douady, l'armada du Burning
-  Ship…
+- **Des figures toutes prêtes**, chacune avec son aperçu dans la liste de gauche (aux couleurs
+  choisies) : vallée des hippocampes, lapin de Douady, l'armada du Burning Ship…
 - **Navigation fluide** : glisser ou deux doigts pour se déplacer, pincer ou molette pour
-  zoomer sous le pointeur, double-clic pour un zoom ×3 animé. Pendant le mouvement l'image est
+  zoomer sous le pointeur, **Espace** pour zoomer vers le pointeur (une pression : ×3 ; en la
+  tenant : on continue), ⇧ Espace ou clic droit pour reculer. Pendant le mouvement l'image est
   calculée en demi-résolution pour suivre, puis recalculée en pleine résolution dès l'arrêt.
 - **Zooms profonds** jusqu'à ×10³⁰ (voir [Comment ça marche](#comment-ça-marche)).
-- **Six palettes**, avec densité et décalage réglables ; changer les couleurs ne relance pas le
+- **Six palettes**, présentées en bandes de couleurs, avec densité et décalage réglables ; changer les couleurs ne relance pas le
   calcul.
 
 ## En français et en anglais
@@ -175,17 +192,21 @@ perturbation.
 | Fichier | Rôle |
 |---|---|
 | `source/FractalCore.c` | nombres en virgule fixe haute précision, orbites de référence |
+| `source/Voyage.c` | le pilote du voyage infini, et les aperçus des figures |
 | `source/Shaders.metal` | calcul par pixel (perturbation) et mise en couleurs, compilé au lancement |
 | `source/Renderer.swift` | pilotage Metal : orbites, textures, demi-résolution pendant le mouvement |
 | `source/FractalModel.swift` | état de la vue : formule, centre en haute précision, zoom, palettes |
 | `source/CanvasView.swift` | souris, trackpad, clavier |
+| `source/Previews.swift` | liste des figures avec leurs aperçus |
 | `source/FractalesApp.swift` | fenêtre et panneau de réglages (SwiftUI) |
 
 ## Tests
 
 `tests/run_tests.sh` exécute le noyau GPU sur le processeur central et compare chaque image à
 un calcul direct en 113 bits, pour les cinq formules et Julia, de la vue d'ensemble jusqu'à un
-zoom de ×10²⁸. Il tourne sous Linux (gcc + libquadmath), et à chaque envoi sur GitHub avec la
+zoom de ×10²⁸. Il fait aussi voler le voyage infini en simulation sur chaque formule, et vérifie
+qu'il ne se perd jamais dans le vide ni dans le noir et qu'il fait demi-tour avant le zoom le
+plus profond. Il tourne sous Linux (gcc + libquadmath), et à chaque envoi sur GitHub avec la
 construction de l'appli sur un Mac (GitHub Actions).
 
 ## Publier une version

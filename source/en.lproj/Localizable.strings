@@ -3,6 +3,8 @@
 
 /* Menu */
 "Vue" = "Navigate";
+"Lancer le voyage" = "Start the Voyage";
+"Pause du voyage" = "Pause the Voyage";
 "Zoomer" = "Zoom In";
 "Dézoomer" = "Zoom Out";
 "Vue d'ensemble" = "Whole Figure";
@@ -14,7 +16,12 @@
 
 /* Right-hand panel */
 "Figures" = "Figures";
-"Choisir une figure…" = "Choose a figure…";
+"Voyage infini" = "Endless voyage";
+"Vitesse" = "Speed";
+"L'appli plonge toute seule vers les zones riches en détails, sans fin. Touche V. Toucher l'image reprend la main." = "The app dives by itself towards the richest detail, endlessly. Key V. Touch the picture to take back control.";
+"Le pilote suit les contours et évite le vide." = "The pilot follows the edges and stays clear of the void.";
+"Rien à voir ici : le pilote recule pour chercher du détail." = "Nothing to see here: the pilot backs out to look for detail.";
+"Tout au fond : le pilote remonte pour replonger ailleurs." = "As deep as it goes: the pilot climbs back to dive somewhere else.";
 "Formule" = "Formula";
 "Ensemble de Julia" = "Julia set";
 "J revient à l'ensemble de départ." = "J goes back to the main set.";
@@ -27,7 +34,8 @@
 "Navigation" = "Navigation";
 "Glisser, ou deux doigts : déplacer" = "Drag, or two fingers: move";
 "Pincer, molette, ⌘ + deux doigts : zoomer" = "Pinch, scroll wheel, ⌘ + two fingers: zoom";
-"Double-clic : zoom ×3   ⇧ double-clic, clic droit : arrière" = "Double-click: zoom ×3   ⇧ double-click, right-click: back out";
+"Espace : zoom vers le pointeur, tant qu'on la tient" = "Space: zoom towards the pointer, for as long as it is held";
+"⇧ Espace, clic droit : zoom arrière" = "⇧ Space, right-click: zoom out";
 "Flèches, + et − ; R : vue d'ensemble" = "Arrows, + and −; R: whole figure";
 "Fractales %@ · rendu Metal" = "Fractales %@ · Metal rendering";
 

@@ -37,10 +37,10 @@ struct float4 {
     float4(float2 v, float c_, float d_) : x(v.x), y(v.y), z(c_), w(d_) {}
     float4(float3 v, float d_) : x(v.x), y(v.y), z(v.z), w(d_) {}
 };
-struct uint2 { uint x, y; };
+struct uint2 { uint x, y; uint2() : x(0), y(0) {} uint2(uint a, uint b) : x(a), y(b) {} };
 inline float dot(float2 a, float2 b) { return a.x * b.x + a.y * b.y; }
 inline float fract(float v) { return v - std::floor(v); }
-using std::log; using std::fmin; using std::fmax; using std::sqrt; using std::max; using std::fabs;
+using std::min; using std::log; using std::fmin; using std::fmax; using std::sqrt; using std::max; using std::fabs;
 
 enum class access { read, write, sample };
 namespace coord { enum c { normalized, pixel }; }
@@ -56,6 +56,9 @@ template <class T, access A = access::sample> struct texture2d {
         uint x = uint(fmin(fmax(fract(uv.x) * w, 0.0f), w - 1.0f)), y = uint(fmin(fmax(uv.y * h, 0.0f), h - 1.0f));
         const float *p = &data[4 * (y * w + x)]; return float4(p[0], p[1], p[2], p[3]);
     }
+    uint get_width() const { return w; }
+    uint get_height() const { return h; }
+    float4 read(uint2 g) const { const float *p = &data[4 * (g.y * w + g.x)]; return float4(p[0], p[1], p[2], p[3]); }
     void write(float4 v, uint2 g) { float *p = &data[4 * (g.y * w + g.x)]; p[0] = v.x; p[1] = v.y; p[2] = v.z; p[3] = v.w; }
 };
 }
