@@ -13,6 +13,10 @@ jobs:
         run: xcrun -sdk macosx metal -std=metal3.0 -c source/Shaders.metal -o /tmp/Shaders.air
       - name: Build the app
         run: zsh source/build_app.sh
+      - name: Check the icon
+        run: |
+          iconutil -c iconset -o /tmp/AppIcon.iconset Fractales.app/Contents/Resources/AppIcon.icns
+          ls /tmp/AppIcon.iconset
       - name: Zip the app
         run: ditto -c -k --keepParent Fractales.app Fractales.zip
       - uses: actions/upload-artifact@v4

@@ -1,3 +1,5 @@
+<img src="icon/spirale.png" width="128" alt="Fractales icon">
+
 # Fractales: explore fractals on a Mac, fast and deep
 
 <a id="english"></a>
@@ -65,6 +67,10 @@ cd fractales/source
 ```
 
 `Fractales.app` appears in the `fractales` folder. macOS 14 or later, Apple chip.
+
+The icon is drawn from real fractal renders by `tools/make_icon.py` (Python with numpy and Pillow),
+which writes three variants in `icon/` and the chosen one in `source/AppIcon.icns`.
+To switch, for example to the whole Mandelbrot set: `python3 tools/make_icon.py galaxie`.
 
 ## How it works
 
@@ -177,6 +183,10 @@ cd fractales/source
 ```
 
 `Fractales.app` apparaît dans le dossier `fractales`. macOS 14 ou plus récent, puce Apple.
+
+L'icône est dessinée à partir de vrais rendus de fractales par `tools/make_icon.py` (Python avec numpy et Pillow),
+qui écrit trois variantes dans `icon/` et celle choisie dans `source/AppIcon.icns`.
+Pour en changer, par exemple pour l'ensemble de Mandelbrot entier : `python3 tools/make_icon.py galaxie`.
 
 ## Comment ça marche
 
